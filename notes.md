@@ -29,3 +29,22 @@
 * <https://forums.raspberrypi.com/viewtopic.php?t=325332>
 * <https://www.raspberrypi.com/documentation/computers/config_txt.html>
 * <https://www.animmouse.com/p/how-to-disable-wifi-and-bluetooth-on-raspberry-pi/>
+
+## States
+
+* init -> sucess/fail
+* survey -> list of nodes, types, IP addresses,
+* set_group -> sucess/fail
+* get_group -> list of IP addresses
+* backup_config -> config data written to system store; handle
+* backup_firmware -> firmware written to system store; handle
+* calibrate ->
+* set_mode -> sucess/fail
+* run
+* stop
+* status
+* reset
+* restore_firmware
+* restore_config
+* exit
+*
