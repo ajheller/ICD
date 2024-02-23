@@ -1,3 +1,5 @@
+.PHONY: help create-env start-server generate-api
+
 help:
 	echo HI
 
