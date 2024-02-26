@@ -2,6 +2,7 @@ from enum import Enum
 from dataclasses import dataclass
 import logging as log
 import time
+import inspect
 
 
 class States(Enum):
@@ -45,9 +46,10 @@ class StateMachine:
         # check for valid state
         self.state = new_state
 
-    def process(self):
-        log.debug("Calling -> %s", self.next_state)
-        result = self.next_state()
+    def process(self, count=1):
+        for _ in range(count):
+            log.debug("Calling -> %s", self.next_state.__name__)
+            result = self.next_state()
         return result
 
     # RPC commands
@@ -57,6 +59,12 @@ class StateMachine:
             self.next_state = self.do_deploy
         else:
             raise (ValueError, f"Wrong state for start(): {self.state}")
+        log.info(
+            "%f %s, next_state=%s",
+            time.time(),
+            inspect.stack()[0][3],
+            self.next_state.__name__,
+        )
 
     def ready(self):
         pre_states = (States.DEPLOY,)
@@ -64,6 +72,12 @@ class StateMachine:
             self.next_state = self.do_muster
         else:
             raise (ValueError("Invalid command %s in state: %s", "ready", self.state))
+        log.info(
+            "%f %s, next_state=%s",
+            time.time(),
+            inspect.stack()[0][3],
+            self.next_state.__name__,
+        )
 
     def run(self):
         pre_states = (States.READY,)
@@ -72,24 +86,54 @@ class StateMachine:
         else:
             raise (ValueError("Invalid command %s in state: %s", "run", self.state))
 
+        log.info(
+            "%f %s, next_state=%s",
+            time.time(),
+            inspect.stack()[0][3],
+            self.next_state.__name__,
+        )
+
     def wait(self):
         pass
 
     def done(self):
         self.is_done = True
+        log.info(
+            "%f %s, next_state=%s",
+            time.time(),
+            inspect.stack()[0][3],
+            self.next_state.__name__,
+        )
 
     def stop(self):
         self.is_stop = True
+        log.info(
+            "%f %s, next_state=%s",
+            time.time(),
+            inspect.stack()[0][3],
+            self.next_state.__name__,
+        )
         pass
 
     def halt(self):
         self.is_halt = True
+        log.info(
+            "%f %s, next_state=%s",
+            time.time(),
+            inspect.stack()[0][3],
+            self.next_state.__name__,
+        )
         pass
 
     # state processing
 
     def do_standby(self):
-        log.info("%f Deploying", time.time())
+        log.info(
+            "%f %s, next_state=%s",
+            time.time(),
+            inspect.stack()[0][3],
+            self.next_state.__name__,
+        )
         pass
 
     def do_deploy(self):
@@ -99,7 +143,13 @@ class StateMachine:
 
         if self.is_ready:
             self.next_state = self.do_muster
-        log.info("%f Deploying - next_state=%s", time.time(), self.next_state)
+
+        log.info(
+            "%f %s, next_state=%s",
+            time.time(),
+            inspect.stack()[0][3],
+            self.next_state.__name__,
+        )
         return True
 
     def do_muster(self):
@@ -109,44 +159,77 @@ class StateMachine:
         # calibration
         pass_muster = True
 
+        self.is_stop = False
+
         if pass_muster:
             self.next_state = self.do_ready
         else:
             self.next_state = self.do_diagnostic
 
-        log.info("%f Mustering, next_state=%s", time.time(), self.next_state)
+        log.info("%f Mustering, next_state=%s", time.time(), self.next_state.__name__)
+        log.info(
+            "%f %s, next_state=%s",
+            time.time(),
+            inspect.stack()[0][3],
+            self.next_state.__name__,
+        )
 
         return True
 
     def do_ready(self):
         self.set_state(States.READY)
-        self.next_state = self.do_campaign
-        log.info("%f Ready", time.time())
+
+        self.is_halt = False
+
+        if self.is_stop:
+            self.next_state = self.do_retreat
+        log.info(
+            "%f %s, next_state=%s",
+            time.time(),
+            inspect.stack()[0][3],
+            self.next_state.__name__,
+        )
         return True
 
     def do_campaign(self):
         self.set_state(States.CAMPAIGN)
-        if self.is_done:
+        if self.is_halt or self.is_stop:
             self.next_state = self.do_report
         else:
             self.next_state = self.do_skirmish
-        log.info("%f Campaign", time.time())
+
+        log.info(
+            "%f %s, next_state=%s",
+            time.time(),
+            inspect.stack()[0][3],
+            self.next_state.__name__,
+        )
         pass
 
     def do_skirmish(self):
         self.set_state(States.SKIRMISH)
         self.next_state = self.do_campaign
 
-        log.info("%f Skirmish", time.time())
+        log.info(
+            "%f %s, next_state=%s",
+            time.time(),
+            inspect.stack()[0][3],
+            self.next_state.__name__,
+        )
         pass
 
     def do_report(self):
-        if self.is_done:
+        if self.is_stop:  # or self.is_halt:
             self.next_state = self.do_retreat
         else:
             self.next_state = self.do_ready
 
-        log.info("%f Report", time.time())
+        log.info(
+            "%f %s, next_state=%s",
+            time.time(),
+            inspect.stack()[0][3],
+            self.next_state.__name__,
+        )
         pass
 
     def do_diagnostic(self):
@@ -156,19 +239,31 @@ class StateMachine:
             self.next_state = self.do_muster
         else:
             self.next_state = self.retreat
-        log.info("%f Diagnostic", time.time())
+
+        log.info(
+            "%f %s, next_state=%s",
+            time.time(),
+            inspect.stack()[0][3],
+            self.next_state.__name__,
+        )
         return True
 
     def do_retreat(self):
         # restore node state
         self.next_state = self.do_standby
-        log.info("%f Retreat", time.time())
+
+        log.info(
+            "%f %s, next_state=%s",
+            time.time(),
+            inspect.stack()[0][3],
+            self.next_state.__name__,
+        )
         pass
 
 
-def unit_test():
+def unit_test(log_level=log.INFO):
 
-    log.basicConfig(format="%(levelname)s:%(message)s", level=log.DEBUG)
+    log.basicConfig(format="%(levelname)s:%(message)s", level=log_level)
 
     s = StateMachine()
     s.process()
@@ -182,18 +277,14 @@ def unit_test():
     s.process()
 
     s.run()
-    s.process()
-
-    s.process()
-
-    s.process()
-    s.process()
-    s.process()
-
+    s.process(10)
     s.done()
     s.process()
+    s.halt()
+    s.process(10)
+
     s.stop()
-    s.process()
+    s.process(10)
 
 
 if __name__ == "__main__":
