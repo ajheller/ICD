@@ -3,15 +3,9 @@ from dataclasses import dataclass
 import logging as log
 import time
 import inspect
+
+# pip install fabric
 from fabric import Connection
-
-
-def talk_to_node(n=10, host="localhost", user="heller"):
-    with Connection(host, user) as conn:
-        for i in range(n):
-            result = conn.run("date; sleep 0.1", hide=True)
-            result = conn.run("date >> log.txt", hide=True)
-            print(result.stdout, time.time())
 
 
 class States(Enum):
@@ -135,7 +129,6 @@ class StateMachine:
         pass
 
     # state processing
-
     def do_standby(self):
         log.info(
             "%f %s, next_state=%s",
@@ -143,7 +136,7 @@ class StateMachine:
             inspect.stack()[0][3],
             self.next_state.__name__,
         )
-        pass
+        return self.next_state
 
     def do_deploy(self):
         self.set_state(States.DEPLOY)
@@ -159,7 +152,7 @@ class StateMachine:
             inspect.stack()[0][3],
             self.next_state.__name__,
         )
-        return True
+        return self.next_state
 
     def do_muster(self):
         self.set_state(States.MUSTER)
@@ -182,7 +175,7 @@ class StateMachine:
             self.next_state.__name__,
         )
 
-        return True
+        return self.next_state
 
     def do_ready(self):
         self.set_state(States.READY)
@@ -197,7 +190,7 @@ class StateMachine:
             inspect.stack()[0][3],
             self.next_state.__name__,
         )
-        return True
+        return self.next_state
 
     def do_campaign(self):
         self.set_state(States.CAMPAIGN)
@@ -212,13 +205,13 @@ class StateMachine:
             inspect.stack()[0][3],
             self.next_state.__name__,
         )
-        pass
+        return self.next_state
 
     def do_skirmish(self):
         self.set_state(States.SKIRMISH)
         self.next_state = self.do_campaign
 
-        talk_to_node()
+        ssh_to_node()
 
         log.info(
             "%f %s, next_state=%s",
@@ -226,7 +219,7 @@ class StateMachine:
             inspect.stack()[0][3],
             self.next_state.__name__,
         )
-        pass
+        return self.next_state
 
     def do_report(self):
         if self.is_stop:  # or self.is_halt:
@@ -240,7 +233,7 @@ class StateMachine:
             inspect.stack()[0][3],
             self.next_state.__name__,
         )
-        pass
+        return self.next_state
 
     def do_diagnostic(self):
         pass_diagnostic = True
@@ -256,7 +249,7 @@ class StateMachine:
             inspect.stack()[0][3],
             self.next_state.__name__,
         )
-        return True
+        return self.next_state
 
     def do_retreat(self):
         # restore node state
@@ -268,7 +261,22 @@ class StateMachine:
             inspect.stack()[0][3],
             self.next_state.__name__,
         )
-        pass
+        return self.next_state
+
+
+# communications with a node
+def ssh_to_node(host="heller@localhost", n=5):
+    log.info(
+        "%f >> %s <<",
+        time.time(),
+        inspect.stack()[0][3],
+    )
+
+    with Connection(host) as conn:
+        for i in range(n):
+            result = conn.run(f"date; sleep 0.1", hide=True)
+            result = conn.run("date >> log.txt", hide=True)
+            print(result.stdout, time.time())
 
 
 def unit_test(log_level=log.INFO):
