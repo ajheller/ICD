@@ -3,6 +3,15 @@ from dataclasses import dataclass
 import logging as log
 import time
 import inspect
+from fabric import Connection
+
+
+def talk_to_node(n=10, host="localhost", user="heller"):
+    with Connection(host, user) as conn:
+        for i in range(n):
+            result = conn.run("date; sleep 0.1", hide=True)
+            result = conn.run("date >> log.txt", hide=True)
+            print(result.stdout, time.time())
 
 
 class States(Enum):
@@ -62,7 +71,7 @@ class StateMachine:
         log.info(
             "%f %s, next_state=%s",
             time.time(),
-            inspect.stack()[0][3],
+            inspect.stack()[0][3].upper(),
             self.next_state.__name__,
         )
 
@@ -75,7 +84,7 @@ class StateMachine:
         log.info(
             "%f %s, next_state=%s",
             time.time(),
-            inspect.stack()[0][3],
+            inspect.stack()[0][3].upper(),
             self.next_state.__name__,
         )
 
@@ -89,7 +98,7 @@ class StateMachine:
         log.info(
             "%f %s, next_state=%s",
             time.time(),
-            inspect.stack()[0][3],
+            inspect.stack()[0][3].upper(),
             self.next_state.__name__,
         )
 
@@ -101,7 +110,7 @@ class StateMachine:
         log.info(
             "%f %s, next_state=%s",
             time.time(),
-            inspect.stack()[0][3],
+            inspect.stack()[0][3].upper(),
             self.next_state.__name__,
         )
 
@@ -110,7 +119,7 @@ class StateMachine:
         log.info(
             "%f %s, next_state=%s",
             time.time(),
-            inspect.stack()[0][3],
+            inspect.stack()[0][3].upper(),
             self.next_state.__name__,
         )
         pass
@@ -120,7 +129,7 @@ class StateMachine:
         log.info(
             "%f %s, next_state=%s",
             time.time(),
-            inspect.stack()[0][3],
+            inspect.stack()[0][3].upper(),
             self.next_state.__name__,
         )
         pass
@@ -166,7 +175,6 @@ class StateMachine:
         else:
             self.next_state = self.do_diagnostic
 
-        log.info("%f Mustering, next_state=%s", time.time(), self.next_state.__name__)
         log.info(
             "%f %s, next_state=%s",
             time.time(),
@@ -209,6 +217,8 @@ class StateMachine:
     def do_skirmish(self):
         self.set_state(States.SKIRMISH)
         self.next_state = self.do_campaign
+
+        talk_to_node()
 
         log.info(
             "%f %s, next_state=%s",
@@ -266,15 +276,13 @@ def unit_test(log_level=log.INFO):
     log.basicConfig(format="%(levelname)s:%(message)s", level=log_level)
 
     s = StateMachine()
-    s.process()
+    s.process(5)
 
     s.start()
-    s.process()
+    s.process(5)
 
     s.ready()
-    s.process()
-
-    s.process()
+    s.process(10)
 
     s.run()
     s.process(10)
