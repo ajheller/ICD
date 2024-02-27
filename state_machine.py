@@ -1,3 +1,9 @@
+#
+#  Simple implementation of SRI SAFER State Machine
+#  Aaron Heller <aaron.heller@sri.com>
+#  26 Feb 2024
+#
+
 from enum import Enum
 from dataclasses import dataclass
 import logging as log
